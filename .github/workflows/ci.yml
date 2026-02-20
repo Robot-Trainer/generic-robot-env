@@ -35,11 +35,10 @@ jobs:
         run: uv sync --all-extras
 
       - name: Lint with ruff
-        run: uv run ruff check .
+        run: uv run ruff check . --exclude=typings
 
       - name: Check formatting with ruff
-        run: uv run ruff format --check .
-
+        run: uv run ruff format --check . --exclude=typings
       - name: Run tests
         run: |
           # Use headless rendering for MuJoCo in CI
