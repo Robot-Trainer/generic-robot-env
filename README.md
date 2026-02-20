@@ -6,13 +6,15 @@ This library is heavily inspired by and depends on the [gym_hil](https://github.
 
 This package provides 
  * `RobotConfig`: A version of the gym_hil MujocoGymEnv that can extract its configuration from a well-formed mujoco scene.xml file.
- * `GenericRobotEnv`, a configurable environment wrapper around a MuJoCo XML robot model that supports both operational-space control (OSC) and simple joint-level control. It is designed to be a minimal, reusable foundation for building manipulation and robot arm tasks.
+ * `GenericRobotEnv`, a configurable robot-control base environment around a MuJoCo XML model, with reusable robot methods (`apply_action`, `get_robot_state`, `reset_robot`, `render`, `get_gripper_pose`).
+ * `GenericTaskEnv`, a task-oriented layer on top of `GenericRobotEnv` that adds Panda-pick-style task behavior (task reset, environment state observation, reward, success/termination).
 
 
 ## Features
 
 - Auto-detects joints, actuators, end-effector site, cameras and (optionally) a `home` keyframe from a MuJoCo XML file.
 - Two control modes: `osc` (end-effector operational-space control) and `joint` (direct actuator control).
+- Separation of concerns: robot-control APIs in `GenericRobotEnv`, task APIs in `GenericTaskEnv`.
 - Optional image observations from model cameras.
 - Returns structured observations compatible with Gymnasium `spaces.Dict`.
 
@@ -33,11 +35,11 @@ Note: The repository includes typed stubs under `typings/` for local development
 ```python
 from pathlib import Path
 import numpy as np
-from generic_robot_env.generic_robot_env import RobotConfig, GenericRobotEnv
+from generic_robot_env.generic_robot_env import RobotConfig, GenericTaskEnv
 
 xml = Path("mujoco_menagerie/aloha/scene.xml")  # point to a model in the repo
 config = RobotConfig.from_xml(xml, robot_name="aloha")
-env = GenericRobotEnv(config, control_mode="osc", image_obs=False)
+env = GenericTaskEnv(config, control_mode="osc", image_obs=False)
 
 obs, _ = env.reset()
 for _ in range(200):
@@ -52,7 +54,7 @@ env.close()
 
 ```python
 config = RobotConfig.from_xml(Path("mujoco_menagerie/aloha/aloha.xml"), robot_name="aloha")
-env = GenericRobotEnv(config, control_mode="osc", image_obs=True)
+env = GenericTaskEnv(config, control_mode="osc", image_obs=True)
 obs, _ = env.reset()
 # obs['pixels'] -> dict(camera_name -> HxWx3 uint8 array)
 ```
@@ -69,7 +71,7 @@ See [src/generic_robot_env/generic_robot_env.py](src/generic_robot_env/generic_r
 
 ## Observation and action spaces
 
-Observations are returned as a Gymnasium `spaces.Dict` with the following primary keys under `agent_pos`:
+`GenericRobotEnv` observations are returned as a Gymnasium `spaces.Dict` with primary keys under `agent_pos`:
 
 - `joint_pos`: Joint positions for the detected robot joints (array)
 - `joint_vel`: Joint velocities (array)
@@ -77,7 +79,11 @@ Observations are returned as a Gymnasium `spaces.Dict` with the following primar
 - `tcp_vel`: End-effector linear and angular velocity (6D)
 - `gripper_pose` (optional): Single-value gripper state when a gripper actuator is detected
 
-When `image_obs=True`, `pixels` is also included and contains a `spaces.Dict` of camera-name -> RGB image arrays.
+When `image_obs=True`, `pixels` is included and contains a `spaces.Dict` of camera-name -> RGB image arrays.
+
+`GenericTaskEnv` uses Panda-pick-style observations:
+- State mode: `{"agent_pos": <vector>, "environment_state": <object position>}`
+- Image mode: `{"pixels": <camera dict>, "agent_pos": <vector>}`
 
 Action spaces depend on `control_mode`:
 
@@ -104,7 +110,7 @@ pytest tests
 
 ## **Tips and troubleshooting**
 
-- **Missing EE/site detection:** If the end-effector isn't found automatically, open the XML and add a site with a common name like `ee`, `end_effector`, `tcp` or `attachment_site` so the auto-detection picks it up.
+- **Missing end-effector/site detection:** If the end-effector isn't found automatically, open the XML and add a site with a common name like `ee`, `end_effector`, `tcp` or `attachment_site` so auto-detection can find it.
 - **Gripper mapping:** If the model exposes a gripper actuator with a control range, the environment will append a gripper command dimension to the action space and will respect `actuator_ctrlrange` when possible.
 
 

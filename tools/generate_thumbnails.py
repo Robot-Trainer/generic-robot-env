@@ -129,7 +129,7 @@ def generate_thumbnails():
                     "xml_path": str(config.xml_path),  # Convert Path to string
                     "joint_names": config.joint_names,
                     "actuator_names": config.actuator_names,
-                    "ee_site_name": config.ee_site_name,
+                    "end_effector_site_name": config.end_effector_site_name,
                     "gripper_actuator_name": config.gripper_actuator_name,
                     "home_position": config.home_position.tolist()
                     if config.home_position is not None
@@ -145,7 +145,7 @@ def generate_thumbnails():
                     "actuator_ids": config.actuator_ids.tolist()
                     if config.actuator_ids is not None
                     else None,
-                    "ee_site_id": config.ee_site_id,
+                    "end_effector_site_id": config.end_effector_site_id,
                     "gripper_actuator_id": config.gripper_actuator_id,
                 }
 

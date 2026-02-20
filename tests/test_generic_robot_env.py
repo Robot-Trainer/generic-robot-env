@@ -8,7 +8,12 @@ from typing import Any, cast
 import numpy as np
 import pytest
 
-from generic_robot_env import GenericRobotEnv, RobotConfig, extract_config_from_xml
+from generic_robot_env import (
+    GenericRobotEnv,
+    GenericTaskEnv,
+    RobotConfig,
+    extract_config_from_xml,
+)
 
 # Minimal XML for testing
 TEST_XML = """
@@ -37,11 +42,51 @@ TEST_XML = """
 </mujoco>
 """
 
+TASK_XML = """
+<mujoco model="test_task_robot">
+    <worldbody>
+        <body name="base" pos="0 0 0">
+            <joint name="joint1" type="hinge" axis="0 0 1"/>
+            <geom type="capsule" size="0.05 0.2" pos="0 0 0.2"/>
+            <body name="link1" pos="0 0 0.4">
+                <joint name="joint2" type="hinge" axis="0 1 0"/>
+                <geom type="capsule" size="0.05 0.2" pos="0 0 0.2"/>
+                <site name="end_effector" pos="0 0 0.4"/>
+            </body>
+        </body>
+        <body name="block_body" pos="0.5 0.0 0.05">
+            <joint name="block" type="free"/>
+            <geom name="block" type="box" size="0.02 0.02 0.02"/>
+            <site name="block_site" pos="0 0 0"/>
+        </body>
+        <camera name="test_cam" pos="1 1 1" euler="0 0 0"/>
+    </worldbody>
+    <sensor>
+        <framepos name="block_pos" objtype="site" objname="block_site"/>
+    </sensor>
+    <actuator>
+        <position name="act1" joint="joint1"/>
+        <velocity name="act2" joint="joint2"/>
+        <position name="gripper_actuator" joint="joint1"/>
+    </actuator>
+    <keyframe>
+        <key name="home" qpos="0.1 0.2 0.5 0.0 0.05 1.0 0.0 0.0 0.0"/>
+    </keyframe>
+</mujoco>
+"""
+
 
 @pytest.fixture
 def xml_file(tmp_path: Path) -> Path:
     p = tmp_path / "test_robot.xml"
     p.write_text(TEST_XML)
+    return p
+
+
+@pytest.fixture
+def task_xml_file(tmp_path: Path) -> Path:
+    p = tmp_path / "test_task_robot.xml"
+    p.write_text(TASK_XML)
     return p
 
 
@@ -51,7 +96,7 @@ def test_robot_config_init() -> None:
         xml_path=Path("test.xml"),
         joint_names=["j1"],
         actuator_names=["a1"],
-        ee_site_name="ee",
+        end_effector_site_name="end_effector",
         camera_names=["c1"],
     )
     assert config.robot_name == "test"
@@ -66,7 +111,7 @@ def test_extract_config_from_xml(xml_file: Path) -> None:
     assert "joint2" in config.joint_names
     assert "act1" in config.actuator_names
     assert config.gripper_actuator_name == "gripper_actuator"
-    assert config.ee_site_name == "ee"
+    assert config.end_effector_site_name == "ee"
     assert "test_cam" in config.camera_names
 
 
@@ -152,5 +197,76 @@ def test_generic_robot_env_render(xml_file: Path) -> None:
     assert "pixels" in obs
     assert "test_cam" in obs["pixels"]
     assert obs["pixels"]["test_cam"].shape == (480, 640, 3)
+
+    env.close()
+
+
+def test_generic_robot_env_public_methods(xml_file: Path) -> None:
+    config = extract_config_from_xml(xml_file, "test_robot")
+    env = GenericRobotEnv(robot_config=config)
+    env.reset()
+
+    robot_state = env.get_robot_state()
+    assert robot_state.ndim == 1
+    assert robot_state.shape[0] == 2 + 2 + 1 + 3
+
+    gripper_pose = env.get_gripper_pose()
+    assert gripper_pose.shape == (1,)
+
+    frames = env.render()
+    assert isinstance(frames, list)
+
+    action_space = cast(Any, env.action_space)
+    env.apply_action(np.zeros(action_space.shape, dtype=np.float32))
+
+    env.reset_robot()
+
+    env.close()
+
+
+def test_generic_task_env_reset_and_step(task_xml_file: Path) -> None:
+    config = extract_config_from_xml(task_xml_file, "test_task_robot")
+    env = GenericTaskEnv(
+        robot_config=config,
+        control_mode="osc",
+        object_joint_name="block",
+        object_position_sensor_name="block_pos",
+    )
+    obs, _ = env.reset()
+
+    assert "agent_pos" in obs
+    assert "environment_state" in obs
+    assert obs["environment_state"].shape == (3,)
+
+    action_space = cast(Any, env.action_space)
+    action = np.zeros(action_space.shape, dtype=np.float32)
+    obs, reward, terminated, truncated, info = env.step(action)
+
+    assert "agent_pos" in obs
+    assert isinstance(reward, float)
+    assert isinstance(terminated, bool)
+    assert truncated is False
+    assert "succeed" in info
+
+    env.close()
+
+
+def test_generic_task_env_image_observation(task_xml_file: Path) -> None:
+    from gym_hil.mujoco_gym_env import GymRenderingSpec
+
+    config = extract_config_from_xml(task_xml_file, "test_task_robot")
+    env = GenericTaskEnv(
+        robot_config=config,
+        image_obs=True,
+        render_mode="rgb_array",
+        render_spec=GymRenderingSpec(width=320, height=240),
+        object_joint_name="block",
+        object_position_sensor_name="block_pos",
+    )
+    obs, _ = env.reset()
+
+    assert "pixels" in obs
+    assert "test_cam" in obs["pixels"]
+    assert obs["pixels"]["test_cam"].shape == (240, 320, 3)
 
     env.close()
