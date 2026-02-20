@@ -1,10 +1,10 @@
 # generic_robot_env
 
-A generic MuJoCo-based robot environment generator for LeRobot or Gymnasium-style experiments. 
+A generic MuJoCo-based robot environment generator for LeRobot or Gymnasium-style experiments.
 
 This library is heavily inspired by and depends on the [gym_hil](https://github.com/huggingface/gym-hil) project which implemented the first variant of these configurations.
 
-This package provides 
+This package provides
  * `RobotConfig`: A version of the gym_hil MujocoGymEnv that can extract its configuration from a well-formed mujoco scene.xml file.
  * `GenericRobotEnv`, a configurable robot-control base environment around a MuJoCo XML model, with reusable robot methods (`apply_action`, `get_robot_state`, `reset_robot`, `render`, `get_gripper_pose`).
  * `GenericTaskEnv`, a task-oriented layer on top of `GenericRobotEnv` that adds Panda-pick-style task behavior (task reset, environment state observation, reward, success/termination).
@@ -102,6 +102,21 @@ Run the test suite with pytest from the repository root:
 
 ```bash
 pytest tests
+```
+
+## Local presubmit hooks
+
+Install local git hooks so linting/formatting runs before commit and tests run before push:
+
+```bash
+uv run pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+Run hooks manually (optional):
+
+```bash
+uv run pre-commit run --all-files
+uv run pre-commit run --hook-stage pre-push
 ```
 
 - **Faster experiments:** Many models include camera/site names that the environment will auto-detect (end-effector sites, cameras, and optional `home` keyframes). If your chosen model provides a `home` keyframe the environment will attempt to use it as the default reset pose.

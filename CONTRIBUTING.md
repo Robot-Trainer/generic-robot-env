@@ -45,3 +45,23 @@ We use `ruff` for linting and formatting.
 uv run ruff check .
 uv run ruff format .
 ```
+
+### Git hooks
+
+This repository uses `pre-commit` for local checks before committing or pushing changes:
+
+- `pre-commit` hook: runs fast checks/fixes (`ruff`, formatting, and file hygiene checks)
+- `pre-push` hook: runs the test suite (`pytest`)
+
+Install hooks once after cloning:
+
+```bash
+uv run pre-commit install --hook-type pre-commit --hook-type pre-push
+```
+
+Run the same checks manually:
+
+```bash
+uv run pre-commit run --all-files
+uv run pre-commit run --hook-stage pre-push
+```

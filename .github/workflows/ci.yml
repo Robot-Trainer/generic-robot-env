@@ -42,7 +42,7 @@ jobs:
       - name: Run tests
         run: |
           # Use headless rendering for MuJoCo in CI
-          export MUJOCO_GL=osmesa 
+          export MUJOCO_GL=osmesa
           uv run pytest --cov=src --cov-report=xml
 
       - name: Upload coverage to Codecov
