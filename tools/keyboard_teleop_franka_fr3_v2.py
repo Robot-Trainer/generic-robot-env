@@ -22,7 +22,7 @@ from generic_robot_env.generic_robot_env import GenericTaskEnv, RobotConfig
 
 
 class NonBlockingKeyboard:
-    def __enter__(self) -> "NonBlockingKeyboard":
+    def __enter__(self) -> NonBlockingKeyboard:
         self._fd = sys.stdin.fileno()
         self._old_settings = termios.tcgetattr(self._fd)
         tty.setcbreak(self._fd)
@@ -172,7 +172,8 @@ def main() -> None:
                     except Exception as e:
                         render_failed = True
                         print(
-                            f"Render preview unavailable; continuing with terminal keyboard input. Error: {e}"
+                            "Render preview unavailable; continuing with terminal"
+                            f" keyboard input. Error: {e}"
                         )
 
                 if key is None:
@@ -195,7 +196,8 @@ def main() -> None:
                 _, reward, terminated, truncated, info = env.step(action)
                 if terminated or truncated:
                     print(
-                        f"Episode ended (reward={reward:.4f}, succeed={info.get('succeed', False)}). Resetting..."
+                        f"Episode ended (reward={reward:.4f}"
+                        f", succeed={info.get('succeed', False)}). Resetting..."
                     )
                     env.reset()
 
