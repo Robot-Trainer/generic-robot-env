@@ -31,7 +31,8 @@ class NonBlockingKeyboard:
     def __exit__(self, exc_type, exc, tb) -> None:
         termios.tcsetattr(self._fd, termios.TCSADRAIN, self._old_settings)
 
-    def read_key(self) -> str | None:
+    @staticmethod
+    def read_key() -> str | None:
         if select.select([sys.stdin], [], [], 0)[0]:
             return sys.stdin.read(1)
         return None
