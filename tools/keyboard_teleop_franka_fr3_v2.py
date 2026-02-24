@@ -66,31 +66,31 @@ def key_to_action(
         return action
 
     # Cartesian translation
-    if key == "w" or key == ",":
+    if key in ("w", ","):
         action[0] = linear_scale
-    elif key == "s" or key == "o":
+    elif key in ("s", "o"):
         action[0] = -linear_scale
-    elif key == "a" or key == "a":
+    elif key in ("a",):
         action[1] = linear_scale
-    elif key == "d" or key == "e":
+    elif key in ("d", "e"):
         action[1] = -linear_scale
-    elif key == "r" or key == "p":
+    elif key in ("r", "p"):
         action[2] = linear_scale
-    elif key == "f" or key == "u":
+    elif key in ("f", "u"):
         action[2] = -linear_scale
 
     # Orientation deltas
-    elif key == "i" or key == "c":
+    elif key in ("i", "c"):
         action[3] = angular_scale
-    elif key == "k" or key == "t":
+    elif key in ("k", "t"):
         action[3] = -angular_scale
-    elif key == "j" or key == "h":
+    elif key in ("j", "h"):
         action[4] = angular_scale
-    elif key == "l" or key == "n":
+    elif key in ("l", "n"):
         action[4] = -angular_scale
-    elif key == "u" or key == "g":
+    elif key in ("u", "g"):
         action[5] = angular_scale
-    elif key == "o" or key == "r":
+    elif key in ("o", "r"):
         action[5] = -angular_scale
 
     # Gripper command (if present)
