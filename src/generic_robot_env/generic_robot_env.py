@@ -505,7 +505,6 @@ class GenericRobotEnv(MujocoGymEnvBase):
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         """Reset robot-only state and return an observation dictionary."""
         super().reset(seed=seed)
-        del options
         self.reset_robot()
 
         if self.control_mode == "osc":
