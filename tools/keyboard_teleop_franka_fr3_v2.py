@@ -22,6 +22,10 @@ from generic_robot_env.generic_robot_env import GenericTaskEnv, RobotConfig
 
 
 class NonBlockingKeyboard:
+    def __init__(self) -> None:
+        self._fd = None
+        self._old_settings = None
+
     def __enter__(self) -> NonBlockingKeyboard:
         self._fd = sys.stdin.fileno()
         self._old_settings = termios.tcgetattr(self._fd)
