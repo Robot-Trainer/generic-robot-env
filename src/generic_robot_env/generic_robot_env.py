@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-import mujoco as mujoco
+import mujoco
 import numpy as np
 from gym_hil.controllers import opspace
 from gym_hil.mujoco_gym_env import GymRenderingSpec, MujocoGymEnv
