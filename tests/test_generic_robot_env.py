@@ -217,7 +217,11 @@ def test_generic_robot_env_public_methods(xml_file: Path) -> None:
     assert isinstance(frames, list)
 
     action_space = cast(Any, env.action_space)
-    env.apply_action(np.zeros(action_space.shape, dtype=np.float32)) #  type: ignore[reportArgumentType]
+    env.apply_action(
+        np.zeros(
+            action_space.shape, dtype=np.float32
+        )  #  type: ignore[reportArgumentType]
+    )
 
     env.reset_robot()
 
@@ -256,7 +260,7 @@ def test_generic_robot_env_gripper_warning(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
     # Remove gripper from config
     config.gripper_actuator_name = None
-    
+
     env = GenericRobotArmEnv(robot_config=config, control_mode="osc")
     env.reset()
 
@@ -269,7 +273,7 @@ def test_generic_robot_env_gripper_warning(xml_file: Path) -> None:
 
     with pytest.warns(UserWarning) as record:
         env.step(action_with_gripper)
-    
+
     warning_msgs = [str(w.message) for w in record]
     assert any("Invalid action shape" in msg for msg in warning_msgs)
     assert any("Gripper command sent" in msg for msg in warning_msgs)
