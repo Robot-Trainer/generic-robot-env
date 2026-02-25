@@ -2,16 +2,12 @@
 Defines a renderer class for the MuJoCo Python native bindings.
 """
 from __future__ import annotations
-import mujoco._enums
-from mujoco import _enums
-from mujoco import _functions
-from mujoco import _render
-import mujoco._structs
-from mujoco import _structs
-from mujoco import gl_context
-import numpy as np
+import mujoco as mujoco
+from mujoco.glfw import GLContext
+from mujoco.rendering.classic import gl_context
 import numpy
-__all__: list[str] = ['Renderer', 'gl_context', 'np']
+import numpy as np
+__all__: list[str] = ['GLContext', 'Renderer', 'gl_context', 'mujoco', 'np']
 class Renderer:
     """
     Renders MuJoCo scenes.

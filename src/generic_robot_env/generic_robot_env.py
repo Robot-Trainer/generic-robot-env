@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import warnings
 from contextlib import suppress
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-import mujoco
+import mujoco as mujoco
 import numpy as np
 from gym_hil.controllers import opspace
 from gym_hil.mujoco_gym_env import GymRenderingSpec, MujocoGymEnv
@@ -56,7 +57,7 @@ class EndEffectorRef:
 
 def extract_config_from_xml(xml_path: Path, robot_name: str) -> RobotConfig:
     """Load the model and auto-detect joints, actuators, and 'home' keyframe."""
-    model = mujoco.MjModel.from_xml_path(xml_path.as_posix())
+    model = mujoco.MjModel.from_xml_path(xml_path.as_posix())  # type: ignore[reportArgumentType]
 
     # Auto-detect joints
     # Strategy: Find joints associated with the robot body.
@@ -480,8 +481,8 @@ class GenericRobotEnv(MujocoGymEnvBase):
         if not camera_ids:
             camera_ids = [cast(int, self._render_specs.camera_id)]
         for camera_id in camera_ids:
-            self._viewer.update_scene(self.data, camera=camera_id)
-            frames.append(self._viewer.render())
+            self._viewer.update_scene(self.data, camera=camera_id)  # type: ignore[reportArgumentType]
+            frames.append(self._viewer.render())  # type: ignore[reportArgumentType]
         return frames
 
     def apply_action(self, action: np.ndarray) -> None:
@@ -490,12 +491,57 @@ class GenericRobotEnv(MujocoGymEnvBase):
         `osc` mode interprets action as Cartesian delta + optional gripper command.
         `joint` mode maps action directly to actuator controls.
         """
+        if not isinstance(action, (np.ndarray, list)):  # type: ignore[reportArgumentType]
+            warnings.warn(
+                f"Action must be an array-like object. Received {type(action)}.",
+                UserWarning,
+                stacklevel=2,
+            )
+        action = np.array(action, dtype=np.float32)
+
         action_space = cast(Any, self.action_space)
-        bounded_action = np.clip(action, action_space.low, action_space.high)
+
+        if np.shape(action) != action_space.shape:
+            warnings.warn(
+                f"Invalid action shape {np.shape(action)}."
+                  f" Expected {action_space.shape}."
+                  " Automatically padding or truncating"
+                  " action to match the expected shape.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+            # If the user tries to command a gripper on a robot without one,
+            # warn them gracefully
+            if self._gripper_actuator_id is None \
+            and len(action) > action_space.shape[0]:
+                gripper_action = action[-1]
+                if abs(gripper_action) > 1e-4:
+                    warnings.warn(
+                        "Gripper command sent, but this robot arm does not have a"
+                        " gripper configured. Ignoring gripper action command.",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+
+            processed_action = np.zeros(action_space.shape, dtype=np.float32)
+            min_len = min(len(action), len(processed_action))
+            processed_action[:min_len] = action[:min_len]
+            action = processed_action
+
+        if not action_space.contains(action):
+            warnings.warn(
+                "Action is out of bounds. Clipping to valid action"
+                  " space range [-1.0, 1.0].",
+                UserWarning,
+                stacklevel=2,
+            )
+            action = np.clip(action, action_space.low, action_space.high)
+
         if self.control_mode == "osc":
-            self._step_operational_space_control(bounded_action)
+            self._step_operational_space_control(action)
             return
-        self._step_joint_control(bounded_action)
+        self._step_joint_control(action)
 
     def reset(
         self,

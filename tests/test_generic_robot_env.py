@@ -217,9 +217,62 @@ def test_generic_robot_env_public_methods(xml_file: Path) -> None:
     assert isinstance(frames, list)
 
     action_space = cast(Any, env.action_space)
-    env.apply_action(np.zeros(action_space.shape, dtype=np.float32))
+    env.apply_action(np.zeros(action_space.shape, dtype=np.float32)) #  type: ignore[reportArgumentType]
 
     env.reset_robot()
+
+    env.close()
+
+
+def test_generic_robot_env_bad_user_input_handling(xml_file: Path) -> None:
+    config = extract_config_from_xml(xml_file, "test_robot")
+    env = GenericRobotEnv(robot_config=config, control_mode="osc")
+    env.reset()
+
+    # 1. Test tuple instead of np.ndarray
+    with pytest.warns(UserWarning, match="Action must be an array-like object"):
+        action_tuple = tuple([0.0] * 7)
+        env.step(action_tuple)  # type: ignore[reportArgumentType]
+
+    # 2. Test invalid shape (too short)
+    with pytest.warns(UserWarning, match="Invalid action shape"):
+        action_short = np.zeros((5,), dtype=np.float32)
+        env.step(action_short)
+
+    # 3. Test invalid shape (too long)
+    with pytest.warns(UserWarning, match="Invalid action shape"):
+        action_long = np.zeros((8,), dtype=np.float32)
+        env.step(action_long)
+
+    # 4. Test out of bounds
+    with pytest.warns(UserWarning, match="Action is out of bounds"):
+        action_oob = np.ones((7,), dtype=np.float32) * 2.0
+        env.step(action_oob)
+
+    env.close()
+
+
+def test_generic_robot_env_gripper_warning(xml_file: Path) -> None:
+    config = extract_config_from_xml(xml_file, "test_robot")
+    # Remove gripper from config
+    config.gripper_actuator_name = None
+    
+    env = GenericRobotEnv(robot_config=config, control_mode="osc")
+    env.reset()
+
+    action_space = cast(Any, env.action_space)
+    assert action_space.shape == (6,)
+
+    # Send a 7D action with a non-zero gripper command
+    action_with_gripper = np.zeros((7,), dtype=np.float32)
+    action_with_gripper[-1] = 1.0
+
+    with pytest.warns(UserWarning) as record:
+        env.step(action_with_gripper)
+    
+    warning_msgs = [str(w.message) for w in record]
+    assert any("Invalid action shape" in msg for msg in warning_msgs)
+    assert any("Gripper command sent" in msg for msg in warning_msgs)
 
     env.close()
 
