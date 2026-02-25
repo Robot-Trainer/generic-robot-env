@@ -1,12 +1,12 @@
 from .generic_robot_env import (
-    GenericRobotEnv,
+    GenericRobotArmEnv,
     GenericTaskEnv,
     RobotConfig,
     extract_config_from_xml,
 )
 
 __all__ = [
-    "GenericRobotEnv",
+    "GenericRobotArmEnv",
     "GenericTaskEnv",
     "RobotConfig",
     "extract_config_from_xml",

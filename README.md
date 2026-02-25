@@ -5,16 +5,16 @@ A generic MuJoCo-based robot environment generator for LeRobot or Gymnasium-styl
 This library is heavily inspired by and depends on the [gym_hil](https://github.com/huggingface/gym-hil) project which implemented the first variant of these configurations.
 
 This package provides
- * `RobotConfig`: A version of the gym_hil MujocoGymEnv that can extract its configuration from a well-formed mujoco scene.xml file.
- * `GenericRobotEnv`, a configurable robot-control base environment around a MuJoCo XML model, with reusable robot methods (`apply_action`, `get_robot_state`, `reset_robot`, `render`, `get_gripper_pose`).
- * `GenericTaskEnv`, a task-oriented layer on top of `GenericRobotEnv` that adds Panda-pick-style task behavior (task reset, environment state observation, reward, success/termination).
 
+- `RobotConfig`: A version of the gym_hil MujocoGymEnv that can extract its configuration from a well-formed mujoco scene.xml file.
+- `GenericRobotArmEnv`, a configurable robot-control base environment around a MuJoCo XML model, with reusable robot methods (`apply_action`, `get_robot_state`, `reset_robot`, `render`, `get_gripper_pose`).
+- `GenericTaskEnv`, a task-oriented layer on top of `GenericRobotArmEnv` that adds Panda-pick-style task behavior (task reset, environment state observation, reward, success/termination).
 
 ## Features
 
 - Auto-detects joints, actuators, end-effector site, cameras and (optionally) a `home` keyframe from a MuJoCo XML file.
 - Two control modes: `osc` (end-effector operational-space control) and `joint` (direct actuator control).
-- Separation of concerns: robot-control APIs in `GenericRobotEnv`, task APIs in `GenericTaskEnv`.
+- Separation of concerns: robot-control APIs in `GenericRobotArmEnv`, task APIs in `GenericTaskEnv`.
 - Optional image observations from model cameras.
 - Returns structured observations compatible with Gymnasium `spaces.Dict`.
 
@@ -60,6 +60,7 @@ obs, _ = env.reset()
 ```
 
 Notes:
+
 - If the MuJoCo model contains a keyframe named `home`, the environment will try to use that as the default joint pose.
 - If cameras are present and `image_obs=True`, pixel observations are returned under `obs['pixels']` keyed by camera name.
 
@@ -71,7 +72,7 @@ See [src/generic_robot_env/generic_robot_env.py](src/generic_robot_env/generic_r
 
 ## Observation and action spaces
 
-`GenericRobotEnv` observations are returned as a Gymnasium `spaces.Dict` with primary keys under `agent_pos`:
+`GenericRobotArmEnv` observations are returned as a Gymnasium `spaces.Dict` with primary keys under `agent_pos`:
 
 - `joint_pos`: Joint positions for the detected robot joints (array)
 - `joint_vel`: Joint velocities (array)
@@ -82,6 +83,7 @@ See [src/generic_robot_env/generic_robot_env.py](src/generic_robot_env/generic_r
 When `image_obs=True`, `pixels` is included and contains a `spaces.Dict` of camera-name -> RGB image arrays.
 
 `GenericTaskEnv` uses Panda-pick-style observations:
+
 - State mode: `{"agent_pos": <vector>, "environment_state": <object position>}`
 - Image mode: `{"pixels": <camera dict>, "agent_pos": <vector>}`
 
@@ -121,13 +123,12 @@ uv run pre-commit run --hook-stage pre-push
 
 - **Faster experiments:** Many models include camera/site names that the environment will auto-detect (end-effector sites, cameras, and optional `home` keyframes). If your chosen model provides a `home` keyframe the environment will attempt to use it as the default reset pose.
 
-- **Example with a bundled task:** Some pre-made gym-style wrappers (for example in `gym_hil`) subclass the same base utilities; you can switch between `GenericRobotEnv` and those wrappers by pointing both at the same XML and configuration.
+- **Example with a bundled task:** Some pre-made gym-style wrappers (for example in `gym_hil`) subclass the same base utilities; you can switch between `GenericRobotArmEnv` and those wrappers by pointing both at the same XML and configuration.
 
 ## **Tips and troubleshooting**
 
 - **Missing end-effector/site detection:** If the end-effector isn't found automatically, open the XML and add a site with a common name like `ee`, `end_effector`, `tcp` or `attachment_site` so auto-detection can find it.
 - **Gripper mapping:** If the model exposes a gripper actuator with a control range, the environment will append a gripper command dimension to the action space and will respect `actuator_ctrlrange` when possible.
-
 
 ## Contributing
 

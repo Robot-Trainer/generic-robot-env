@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from generic_robot_env import (
-    GenericRobotEnv,
+    GenericRobotArmEnv,
     GenericTaskEnv,
     RobotConfig,
     extract_config_from_xml,
@@ -117,7 +117,7 @@ def test_extract_config_from_xml(xml_file: Path) -> None:
 
 def test_generic_robot_env_init(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config, image_obs=True)
+    env = GenericRobotArmEnv(robot_config=config, image_obs=True)
 
     obs_space = cast(Any, env.observation_space)
     assert obs_space["agent_pos"]["joint_pos"].shape == (2,)
@@ -134,7 +134,7 @@ def test_generic_robot_env_init(xml_file: Path) -> None:
 
 def test_generic_robot_env_reset(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config)
+    env = GenericRobotArmEnv(robot_config=config)
 
     obs, _ = env.reset()
 
@@ -147,7 +147,7 @@ def test_generic_robot_env_reset(xml_file: Path) -> None:
 
 def test_generic_robot_env_step_osc(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config, control_mode="osc")
+    env = GenericRobotArmEnv(robot_config=config, control_mode="osc")
     env.reset()
 
     # Step with zero action (mostly)
@@ -163,7 +163,7 @@ def test_generic_robot_env_step_osc(xml_file: Path) -> None:
 
 def test_generic_robot_env_step_joint(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config, control_mode="joint")
+    env = GenericRobotArmEnv(robot_config=config, control_mode="joint")
     env.reset()
 
     # 2 actuators (act1, act2) + 1 gripper = 3 actions
@@ -184,7 +184,7 @@ def test_generic_robot_env_render(xml_file: Path) -> None:
 
     config = extract_config_from_xml(xml_file, "test_robot")
     render_spec = GymRenderingSpec(width=640, height=480)
-    env = GenericRobotEnv(
+    env = GenericRobotArmEnv(
         robot_config=config,
         image_obs=True,
         render_mode="rgb_array",
@@ -203,7 +203,7 @@ def test_generic_robot_env_render(xml_file: Path) -> None:
 
 def test_generic_robot_env_public_methods(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config)
+    env = GenericRobotArmEnv(robot_config=config)
     env.reset()
 
     robot_state = env.get_robot_state()
@@ -226,7 +226,7 @@ def test_generic_robot_env_public_methods(xml_file: Path) -> None:
 
 def test_generic_robot_env_bad_user_input_handling(xml_file: Path) -> None:
     config = extract_config_from_xml(xml_file, "test_robot")
-    env = GenericRobotEnv(robot_config=config, control_mode="osc")
+    env = GenericRobotArmEnv(robot_config=config, control_mode="osc")
     env.reset()
 
     # 1. Test tuple instead of np.ndarray
@@ -257,7 +257,7 @@ def test_generic_robot_env_gripper_warning(xml_file: Path) -> None:
     # Remove gripper from config
     config.gripper_actuator_name = None
     
-    env = GenericRobotEnv(robot_config=config, control_mode="osc")
+    env = GenericRobotArmEnv(robot_config=config, control_mode="osc")
     env.reset()
 
     action_space = cast(Any, env.action_space)

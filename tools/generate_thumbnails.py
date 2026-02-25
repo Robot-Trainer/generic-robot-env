@@ -20,7 +20,7 @@ except ImportError:
     Image = None
     print("PIL not found. Please install Pillow to save images.")
 
-from generic_robot_env.generic_robot_env import GenericRobotEnv, RobotConfig
+from generic_robot_env.generic_robot_env import GenericRobotArmEnv, RobotConfig
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -72,7 +72,7 @@ def generate_thumbnails():
 
             # Initialize environment
             try:
-                env = GenericRobotEnv(
+                env = GenericRobotArmEnv(
                     robot_config=config, image_obs=True, render_mode="rgb_array"
                 )
             except Exception as e:

@@ -127,15 +127,15 @@ def extract_config_from_xml(xml_path: Path, robot_name: str) -> RobotConfig:
         xml_path=xml_path,
         joint_names=joint_names,
         actuator_names=actuator_names,
-        end_effector_site_name=end_effector_site_name
-        if end_effector_site_name
-        else "end_effector",
+        end_effector_site_name=(
+            end_effector_site_name if end_effector_site_name else "end_effector"
+        ),
         gripper_actuator_name=gripper_actuator_name,
         camera_names=camera_names,
     )
 
 
-class GenericRobotEnv(MujocoGymEnvBase):
+class GenericRobotArmEnv(MujocoGymEnvBase):
     """Generic robot base environment with robot-control API.
 
     This class focuses on reusable robot mechanics and controller integration,
@@ -504,17 +504,19 @@ class GenericRobotEnv(MujocoGymEnvBase):
         if np.shape(action) != action_space.shape:
             warnings.warn(
                 f"Invalid action shape {np.shape(action)}."
-                  f" Expected {action_space.shape}."
-                  " Automatically padding or truncating"
-                  " action to match the expected shape.",
+                f" Expected {action_space.shape}."
+                " Automatically padding or truncating"
+                " action to match the expected shape.",
                 UserWarning,
                 stacklevel=2,
             )
 
             # If the user tries to command a gripper on a robot without one,
             # warn them gracefully
-            if self._gripper_actuator_id is None \
-            and len(action) > action_space.shape[0]:
+            if (
+                self._gripper_actuator_id is None
+                and len(action) > action_space.shape[0]
+            ):
                 gripper_action = action[-1]
                 if abs(gripper_action) > 1e-4:
                     warnings.warn(
@@ -532,7 +534,7 @@ class GenericRobotEnv(MujocoGymEnvBase):
         if not action_space.contains(action):
             warnings.warn(
                 "Action is out of bounds. Clipping to valid action"
-                  " space range [-1.0, 1.0].",
+                " space range [-1.0, 1.0].",
                 UserWarning,
                 stacklevel=2,
             )
@@ -676,13 +678,13 @@ class GenericRobotEnv(MujocoGymEnvBase):
         return observation
 
 
-class GenericTaskEnv(GenericRobotEnv):
-    """Task layer built on top of `GenericRobotEnv`.
+class GenericTaskEnv(GenericRobotArmEnv):
+    """Task layer built on top of `GenericRobotArmEnv`.
 
     This class adds PandaPick-like task semantics (object initialization,
     environment state in observations, reward computation, and termination)
     while retaining the generalized action handling inherited from
-    `GenericRobotEnv`.
+    `GenericRobotArmEnv`.
     """
 
     def __init__(
