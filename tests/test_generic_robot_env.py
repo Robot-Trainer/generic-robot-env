@@ -218,9 +218,7 @@ def test_generic_robot_env_public_methods(xml_file: Path) -> None:
 
     action_space = cast(Any, env.action_space)
     env.apply_action(
-        np.zeros(
-            action_space.shape, dtype=np.float32
-        )  #  type: ignore[reportArgumentType]
+        np.zeros(action_space.shape, dtype=np.float32)  #  type: ignore[reportArgumentType]
     )
 
     env.reset_robot()
