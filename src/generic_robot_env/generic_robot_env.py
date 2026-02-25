@@ -168,8 +168,7 @@ class GenericRobotArmEnv(MujocoGymEnvBase):
         image_obs: bool = False,
         camera_id: int | None = None,  # Override default camera
     ):
-        if render_spec is None:
-            render_spec = GymRenderingSpec()
+        render_spec = self._default_render_spec(render_spec)
 
         super().__init__(
             xml_path=robot_config.xml_path,
@@ -182,6 +181,11 @@ class GenericRobotArmEnv(MujocoGymEnvBase):
         self.robot_config = robot_config
         self.control_mode = control_mode
         self.image_obs = image_obs
+
+    def _default_render_spec(self, render_spec: GymRenderingSpec | None) -> GymRenderingSpec:
+        if render_spec is None:
+            return GymRenderingSpec()
+        return render_spec
         self.render_mode = render_mode
         self.metadata = {
             "render_modes": ["human", "rgb_array"],
